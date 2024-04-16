@@ -1,79 +1,41 @@
-import  express from 'express';
+// Import necessary modules and types
+import express, { NextFunction, Request, Response, Router } from 'express';
+import { getTasks, getTaskById, createTask, deleteTask, updateTask } from './controllers/index.controllers';
+import fs from 'fs';
+// Create an Express application
 const app = express();
-const PORT= 8080;
+
+// Create a Router instance for handling task-related routes
+const taskRouter = Router();
+
+// Configure middleware for parsing JSON and URL-encoded data
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
-const HTTP_STATUSES={
-    OK_200:200,
-    CREATED:201,
-    NO_CONTENT:204,
-
-    BAD_REQUEST:400,
-    NOT_FOUND:404
-}
-let db = [
-    { id: 1, title: 'Course Title' },
-    { id: 2, title: 'Course Title2' },
-    { id: 3, title: 'Course Title3' },
-    { id: 4, title: 'Course Title4' }
-];
-
-app.get('/', (req, res) => {
-    res.send(JSON.stringify(db))
-    res.sendStatus(HTTP_STATUSES.OK_200);
-    res.json({message:'send message'});
-    res.send();
-})
-
-app.get('/courses', (req, res) => {
-    res.json(db.filter(c=>c.title.indexOf(req.query?.title as string) > -1));
-})
-
-app.get('/courses/:id', (req, res) => {
-    const findCourses =db.find(item => item.id === +req.params.id);
-    if (!findCourses){
-        res.send(HTTP_STATUSES.NOT_FOUND);
-        return 
-    }
-    res.json(findCourses);
-   
-})
-
-app.post('/courses', (req, res) => {
-   db.push({
-    id:+(new Date()),
-    title:req.body.title
-   })
-   res.sendStatus(HTTP_STATUSES.CREATED).json({
-    id:+(new Date()),
-    title:req.body.title
-   })
-})
-
-app.delete('/courses/:id', (req, res) => {
-    db=db.filter(item => item.id === +req.params.id);
-    res.sendStatus(HTTP_STATUSES.NO_CONTENT)
-   
+// server log 
+app.use(function(req:Request,res:Response,next:NextFunction){
+    const now= new Date();
+    const hour=now.getHours();
+    const minutes=now.getMinutes();
+    const seconds=now.getSeconds();
+    const data=`${hour}:${minutes}:${seconds} ${req.method} ${req.url} ${req.get("user-agent")})}`;
+    fs.appendFile("server.log",data + "\n",(err)=>console.log(err));
+    next()
 })
 
 
-app.put('/courses/:id', (req, res) => {
-    if (!req.body.title){
-        res.sendStatus(HTTP_STATUSES.BAD_REQUEST)
-        return
-    }
+// Define routes for task operations using the taskRouter
+taskRouter.get('/tasks', getTasks);
+taskRouter.get('/tasks/:id', getTaskById);
+taskRouter.post('/tasks', createTask);
+taskRouter.put('/tasks/:id', deleteTask);
+taskRouter.delete('/tasks/:id', updateTask);
 
-    const findCourses =db.find(item => item.id !== +req.params.id);
-    if (!findCourses){
-        res.send(HTTP_STATUSES.BAD_REQUEST);
-        return 
-    }
+// Use the taskRouter for paths starting with '/api'
+app.use(taskRouter);
 
-    findCourses.title=req.body.title;
-
-    res.sendStatus(HTTP_STATUSES.NO_CONTENT)
-})
-
+// Set up the Express application to listen on port 3000
+const PORT = 3000;
 app.listen(PORT, () => {
-    console.log('listening on 8080' )
-})
+  console.log(`Server is running on port ${PORT}`);
+});
