@@ -11,7 +11,8 @@ const taskRouter = Router();
 // Configure middleware for parsing JSON and URL-encoded data
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
+//static file to render html into browser
+app.use(express.static(__dirname + "/public"));
 // server log 
 app.use(function(req:Request,res:Response,next:NextFunction){
     const now= new Date();
