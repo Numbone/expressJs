@@ -4,7 +4,6 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "watch": "tsc -w",
     "dev": "concurrently \"tsc --watch\" \"nodemon dist/index.js\"",
     "format:check": "prettier --check .",
     "format:write": "prettier --write .",

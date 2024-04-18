@@ -11,13 +11,14 @@ const taskRouter = Router();
 // Configure middleware for parsing JSON and URL-encoded data
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-//static file to render html into browser
-app.use(express.static(__dirname + "/public"));
-// server log 
+// static file to render html into browser
+app.use(express.static(__dirname + "public"));
+console.log(__dirname + "\\public");
 app.use(function(req:Request,res:Response,next:NextFunction){
-    const now= new Date();
-    const hour=now.getHours();
-    const minutes=now.getMinutes();
+// server log 
+const now= new Date();
+const hour=now.getHours();
+const minutes=now.getMinutes();
     const seconds=now.getSeconds();
     const data=`${hour}:${minutes}:${seconds} ${req.method} ${req.url} ${req.get("user-agent")})}`;
     fs.appendFile("server.log",data + "\n",(err)=>console.log(err));
@@ -36,7 +37,7 @@ taskRouter.delete('/tasks/:id', updateTask);
 app.use(taskRouter);
 
 // Set up the Express application to listen on port 3000
-const PORT = 3000;
+const PORT = 3002;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
