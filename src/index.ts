@@ -2,6 +2,7 @@
 import express, { NextFunction, Request, Response, Router } from 'express';
 import { getTasks, getTaskById, createTask, deleteTask, updateTask } from './controllers/index.controllers';
 import fs from 'fs';
+import { mainRouter } from './router';
 // Create an Express application
 const app = express();
 
@@ -25,6 +26,10 @@ const minutes=now.getMinutes();
     next()
 })
 
+//
+
+
+
 
 // Define routes for task operations using the taskRouter
 taskRouter.get('/tasks', getTasks);
@@ -35,6 +40,7 @@ taskRouter.delete('/tasks/:id', updateTask);
 
 // Use the taskRouter for paths starting with '/api'
 app.use(taskRouter);
+app.use('/api',mainRouter)
 
 // Set up the Express application to listen on port 3000
 const PORT = 3002;
