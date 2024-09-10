@@ -4,12 +4,32 @@ import { User } from './../types/user';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
-const generateJwt = (id:number, email:string, role:string) => {
-    jwt.sign({ id, email, role }, process.env.SECRET_KEY as string ,{ expiresIn: '24h' })
-}
+const generateJwt = (id: number, email: string, role: string): Promise<string> => {
+    //? need to promise resolve because don't work
+    return new Promise((resolve, reject) => {
+        jwt.sign({ id, email, role }, process.env.SECRET_KEY as string ?? "lalalend", { expiresIn: '2h' }, (err, token) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(token as string);
+        });
+    });
+};
+
+const refreshJwt = (id: number, email: string, role: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        jwt.sign({ id, email, role }, process.env.SECRET_KEY as string ?? "lalalend", { expiresIn: '2h' }, (err, token) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(token as string);
+        });
+    });
+};
+
 class UserController {
-    async registration(req:  Request<Record<string, never>, unknown, User>, res: Response) {
-        const { email, password} = req.body;
+    async registration(req: Request<Record<string, never>, unknown, User>, res: Response) {
+        const { email, password } = req.body;
         if (!email || !password) {
             return res.status(400).json({ message: 'All fields are required' });
         }
@@ -24,38 +44,50 @@ class UserController {
         } catch (error) {
             console.error('Error during user registration:', error);
             return res.status(500).json({ message: 'Internal server error' });
-        }       
+        }
     }
 
-    async login(req:Request<Record<string,never>,unknown,User>,res:Response){
-        const {email,password}=req.body
+    async login(req: Request<Record<string, never>, unknown, User>, res: Response) {
+        const { email, password } = req.body;
 
-        if(!email || !password){
-            res.json({
-                message:'All fields are required'
-            })
+        // Check for missing fields and return immediately
+        if (!email || !password) {
+            return res.status(400).json({ message: 'All fields are required' });
         }
 
-        const user = await pool.query<User>('SELECT * FROM users WHERE email = $1', [email]);
+        try {
+            // Fetch user by email
+            const user = await pool.query<User>('SELECT * FROM users WHERE email = $1', [email]);
 
-        if (user.rows.length === 0) {
-            return res.status(401).json({message:'Invalid email'})
-        }   
+            // Check if user exists
+            if (user.rows.length === 0) {
+                return res.status(401).json({ message: 'Invalid email' });
+            }
 
-       
-        const comparePassword = bcrypt.compareSync(password, user.rows[0].password);
-        if (!comparePassword) {
+            // Compare passwords asynchronously
+            const comparePassword = await bcrypt.compare(password, user.rows[0].password);
+            if (!comparePassword) {
+                return res.status(401).json({ message: 'Invalid password' });
+            }
+
+            console.log(user, "users");
+
+            // Generate JWT
+            const token = await generateJwt(user.rows[0].id, user.rows[0].email, user.rows[0].role);
+            const refreshToken = await refreshJwt(user.rows[0].id, user.rows[0].email, user.rows[0].role);
             return res.json({
-                message: 'Invalid password'
-            })
+                access: token,
+                refresh: refreshToken,
+                success: true
+            });
+
+        } catch (error) {
+            console.error('Error logging in:', error);
+            return res.status(500).json({ message: 'Internal Server Error' });
         }
-
-       
-
-        const token = generateJwt(user.rows[0].id, user.rows[0].email, user.rows[0].role)
-        return res.json({ token })
-        
     }
+
+
 }
 
 export default UserController;

@@ -1,8 +1,11 @@
+import swaggerUi from 'swagger-ui-express';
 // Import necessary modules and types
 import express, { NextFunction, Request, Response, Router } from 'express';
+
 import { getTasks, getTaskById, createTask, deleteTask, updateTask } from './controllers/index.controllers';
 import fs from 'fs';
 import { mainRouter } from './router';
+import { swaggerSpec } from './swaggerConfig';
 // Create an Express application
 const app = express();
 
@@ -15,15 +18,15 @@ app.use(express.urlencoded({ extended: false }));
 // static file to render html into browser
 app.use(express.static(__dirname + "public"));
 console.log(__dirname + "\\public");
-app.use(function(req:Request,res:Response,next:NextFunction){
-// server log 
-const now= new Date();
-const hour=now.getHours();
-const minutes=now.getMinutes();
-    const seconds=now.getSeconds();
-    const data=`${hour}:${minutes}:${seconds} ${req.method} ${req.url} ${req.get("user-agent")})}`;
-    fs.appendFile("server.log",data + "\n",(err)=>console.log(err));
-    next()
+app.use(function (req: Request, res: Response, next: NextFunction) {
+  // server log 
+  const now = new Date();
+  const hour = now.getHours();
+  const minutes = now.getMinutes();
+  const seconds = now.getSeconds();
+  const data = `${hour}:${minutes}:${seconds} ${req.method} ${req.url} ${req.get("user-agent")})}`;
+  fs.appendFile("server.log", data + "\n", (err) => console.log(err));
+  next()
 })
 
 //
@@ -40,7 +43,11 @@ taskRouter.delete('/tasks/:id', updateTask);
 
 // Use the taskRouter for paths starting with '/api'
 app.use(taskRouter);
-app.use('/api',mainRouter)
+app.use('/api', mainRouter)
+
+
+//Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Set up the Express application to listen on port 3000
 const PORT = 3002;
